@@ -1,10 +1,13 @@
 #!/usr/bin/env python
+import numpy as np
+import sys
 import bz2
 import qrcode
 from PIL import Image
 from pyzbar import pyzbar
 import cv2 as cv
 import math
+np.set_printoptions(threshold=sys.maxsize)
 
 """
 This program effectively encodes and transforms data to QR code.
@@ -26,6 +29,13 @@ D.extend([chr(ord('0')+i) for i in range(10)])
 D.extend([chr(ord('A')+i) for i in range(26)])
 D.extend([' ', '$', '%', '*', '+', '-', '.', '/', ':'])
 
+QRCODE_MAX_DICT={
+        qrcode.constants.ERROR_CORRECT_L: 1852,
+        qrcode.constants.ERROR_CORRECT_M: 1032,
+        qrcode.constants.ERROR_CORRECT_Q: 644,
+        qrcode.constants.ERROR_CORRECT_H: 490,
+}
+
 def get_image_name_format(nr_imgs):
     return '%%0%dd.png' % (int(math.floor(math.log10(nr_imgs)))+1)
 
@@ -41,24 +51,19 @@ def data2code(s):
     return encoded
 
 def code2qrcode(encoded):
-    #QRCODE_MAX = 4295
-    QRCODE_MAX = 1000
+    ERROR_CORRECT = qrcode.constants.ERROR_CORRECT_Q
+    QRCODE_MAX = QRCODE_MAX_DICT[ERROR_CORRECT]
     chunks = [encoded[i:i+QRCODE_MAX] for i in range(0, len(encoded), QRCODE_MAX)]
     img_fmt = get_image_name_format(len(chunks))
     for i, chunk in enumerate(chunks):
-        qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L)
+        qr = qrcode.QRCode(error_correction=ERROR_CORRECT)
         qr.add_data(chunk)
         qr.make_image().save(img_fmt % i, 'png')
 
 def qrcode2code(img_name):
-    img = cv.imread(img_name, 0)
-#    img = Image.open(img_name)
-    #img = cv.resize(img,None,fx=5,fy=5)
-    print(img)
-    cv.imshow('',img)
-    import time
-    time.sleep(10)
+    img = Image.open(img_name)
     data = pyzbar.decode(img)
+    print(data[0].data.decode('utf-8'))
     return data[0].data.decode('utf-8')
 
 def code2data(encoded):
