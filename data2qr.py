@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 import bz2
 import qrcode
+from PIL import Image
+from pyzbar import pyzbar
+import cv2 as cv
+import math
 
 """
 This program effectively encodes and transforms data to QR code.
@@ -22,6 +26,9 @@ D.extend([chr(ord('0')+i) for i in range(10)])
 D.extend([chr(ord('A')+i) for i in range(26)])
 D.extend([' ', '$', '%', '*', '+', '-', '.', '/', ':'])
 
+def get_image_name_format(nr_imgs):
+    return '%%0%dd.png' % (int(math.floor(math.log10(nr_imgs)))+1)
+
 def data2code(s):
     byte_array=bz2.compress(s.encode(ENCODE_METHOD))
     bits = ''.join(map(lambda bt: bin(bt)[2:].zfill(8), byte_array))
@@ -34,12 +41,25 @@ def data2code(s):
     return encoded
 
 def code2qrcode(encoded):
-    QRCODE_MAX = 4295
+    #QRCODE_MAX = 4295
+    QRCODE_MAX = 1000
     chunks = [encoded[i:i+QRCODE_MAX] for i in range(0, len(encoded), QRCODE_MAX)]
+    img_fmt = get_image_name_format(len(chunks))
     for i, chunk in enumerate(chunks):
         qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L)
         qr.add_data(chunk)
-        qr.make_image().save('%d.png' % i, 'png')
+        qr.make_image().save(img_fmt % i, 'png')
+
+def qrcode2code(img_name):
+    img = cv.imread(img_name, 0)
+#    img = Image.open(img_name)
+    #img = cv.resize(img,None,fx=5,fy=5)
+    print(img)
+    cv.imshow('',img)
+    import time
+    time.sleep(10)
+    data = pyzbar.decode(img)
+    return data[0].data.decode('utf-8')
 
 def code2data(encoded):
     encoded = encoded.replace('\n','')
@@ -54,10 +74,9 @@ def code2data(encoded):
     return bz2.decompress(bytes([int(byte, 2) for byte in bit8_array])).decode(ENCODE_METHOD)
 
 def write_file_script(filename, content):
-    script = """
-with open('%s.encode', 'w') as f:
-    f.write(\"\"\"%s\"\"\")
-""" % (filename, content)
+    script = """cat <<EOF > %s
+%s
+EOF""" % (filename, content)
     return script
 
 if __name__ == '__main__':
@@ -67,9 +86,13 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', dest='mode',
-        type=str, choices=['encode', 'decode'],
+        type=str, choices=['encode', 'decode', 'decode-raw'],
         action='store', default='encode',
         help='covert mode')
+    parser.add_argument('-o', dest='out_filename',
+        type=str,
+        action='store', default='a.out',
+        help='output file name')
     #positional arguments
     parser.add_argument('filenames', nargs='*', type=str,
         help='file names')
@@ -86,6 +109,19 @@ if __name__ == '__main__':
         encoded_str = data2code(big_str)
         code2qrcode(encoded_str)
     elif args.mode == 'decode':
+        decoded_filename = args.out_filename
+        try:
+            if os.path.isfile(decoded_filename):
+                raise Exception('file \'%s\' already exists' % decoded_filename)
+            contents = []
+            for filename in args.filenames:
+                contents.append(qrcode2code(filename))
+            decoded_content = code2data(''.join(contents))
+            with open(decoded_filename, 'a') as f:
+                f.write(decoded_content)
+        except:
+            traceback.print_exc()
+    elif args.mode == 'decode-raw':
         for filename in args.filenames:
             try:
                 with open(filename, 'r') as f:
@@ -99,3 +135,4 @@ if __name__ == '__main__':
                     f.write(decoded_content)
             except:
                 traceback.print_exc()
+
