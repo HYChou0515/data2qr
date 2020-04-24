@@ -1,6 +1,6 @@
+#!/usr/bin/env python
 import numpy as np
 import cv2
-import sys
 
 from PIL import Image
 from pyzbar import pyzbar
@@ -65,14 +65,19 @@ def scan_qr(frame):
 
     return frame, qr_str
 
-def analysis_video(vname):
+def analysis_video(vname, scan_qr_rate=10, quite_mode=False):
+    """Analysis a video of a sequence of images of QR code
+    and return captured string from it.
+
+    Args:
+        scan_qr_rate: scan qrcode every {x} frames
+    """
 
     cap = cv2.VideoCapture(vname)
     if not cap.isOpened():
-        raise ValueError('cannot open video \"%s\"' % (vname))
+        raise ValueError(f'cannot open video "{vname}"')
 
-    SCAN_QR_RATE = 10 # scan qrcode every ?? frames
-    state = {'paused': False, 'scan_qr': SCAN_QR_RATE}
+    state = {'paused': False, 'scan_qr': scan_qr_rate}
 
     qr_strings = []
     last_qr_str = None
@@ -83,15 +88,15 @@ def analysis_video(vname):
             if state['scan_qr'] <= 0:
                 frame, qr_str = scan_qr(frame)
                 if qr_str is not None:
-                    state['scan_qr'] = SCAN_QR_RATE
+                    state['scan_qr'] = scan_qr_rate
                     if last_qr_str is None or last_qr_str != qr_str:
-                        print(qr_str)
                         qr_strings.append(qr_str)
                         last_qr_str = qr_str
             else:
                 state['scan_qr'] -= 1
 
-            cv2.imshow('frame', frame)
+            if not quite_mode:
+                cv2.imshow('frame', frame)
 
             key = cv2.waitKey(25)
 
@@ -106,7 +111,10 @@ def analysis_video(vname):
                     print('Paused')
         else:
             break
-    print(qr_strings)
+    return ''.join(qr_strings)
 
-#capture_video()
-analysis_video(sys.argv[1])
+if __name__ == '__main__':
+    import sys
+    #capture_video()
+    decoded_str = analysis_video(sys.argv[1])
+    print(decoded_str)

@@ -7,6 +7,8 @@ from PIL import Image
 from pyzbar import pyzbar
 import cv2 as cv
 import math
+import string
+import random
 np.set_printoptions(threshold=sys.maxsize)
 
 """
@@ -79,9 +81,12 @@ def code2data(encoded):
     return bz2.decompress(bytes([int(byte, 2) for byte in bit8_array])).decode(ENCODE_METHOD)
 
 def write_file_script(filename, content):
-    script = """cat <<EOF > %s
-%s
-EOF""" % (filename, content)
+    eof_str = 'EOF'
+    while eof_str in content:
+        eof_str = f'{eof_str}{random.choice(string.ascii_letters + string.digits)}'
+    script = f"""cat <<{eof_str} | head -n-1 > {filename}
+{content}
+{eof_str}"""
     return script
 
 if __name__ == '__main__':
@@ -116,8 +121,8 @@ if __name__ == '__main__':
     elif args.mode == 'decode':
         decoded_filename = args.out_filename
         try:
-            if os.path.isfile(decoded_filename):
-                raise Exception('file \'%s\' already exists' % decoded_filename)
+            if os.path.exists(decoded_filename):
+                raise Exception(f"file {decoded_filename} already exists")
             contents = []
             for filename in args.filenames:
                 contents.append(qrcode2code(filename))
@@ -133,9 +138,9 @@ if __name__ == '__main__':
                     content = f.read()
                 decoded_content = code2data(content)
 
-                decoded_filename = filename+'.decode'
-                if os.path.isfile(decoded_filename):
-                    raise Exception('file \'%s\' already exists')
+                decoded_filename = args.out_filename
+                if os.path.exists(decoded_filename):
+                    raise Exception(f"file {decoded_filename} already exists")
                 with open(decoded_filename, 'w') as f:
                     f.write(decoded_content)
             except:
