@@ -1,15 +1,9 @@
 import os
-import sys
-import numpy as np
 import bz2
 import qrcode
 from PIL import Image
 from pyzbar import pyzbar
-import cv2 as cv
 import math
-import string
-import random
-np.set_printoptions(threshold=sys.maxsize)
 
 __all__ = ['data2code', 'code2qrcode', 'qrcode2code', 'code2data']
 
