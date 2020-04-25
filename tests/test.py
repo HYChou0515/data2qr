@@ -73,3 +73,11 @@ class Test_EnTxt(unittest.TestCase):
         code = self._content(code=True)
         self.assertEqual(data2qr.code2data(code), content)
 
+class Test_PyCode(Test_EnTxt):
+
+    def _target(self, code=False):
+        if not code:
+            return f'{TEST_ROOT}/{RESOURCE}/py_code'
+        else:
+            return f'{TEST_ROOT}/{RESOURCE}/py_code.code'
+
