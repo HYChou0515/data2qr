@@ -23,9 +23,12 @@ def write_file_script(filename, content):
     eof_str = 'EOF'
     while eof_str in content:
         eof_str = f'{eof_str}{random.choice(string.ascii_letters + string.digits)}'
-    script = f"""cat <<{eof_str} | head -n-1 > {filename}
+    script = f"""
+mkdir -p $(dirname {filename})
+cat <<{eof_str} | head -n-1 > {filename}
 {content}
-{eof_str}"""
+{eof_str}
+"""
     return script
 
 if args.mode == 'encode':
