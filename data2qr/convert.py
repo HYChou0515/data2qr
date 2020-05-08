@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import bz2
 import qrcode
 from PIL import Image
@@ -21,11 +22,12 @@ Decoding work flow: assume imcoming is one long string in char set D
     --bz2-decompress--> decoded byte array --decode-ascii--> ascii string
 """
 
-ENCODE_METHOD = 'ascii'
 D = []
 D.extend([chr(ord('0')+i) for i in range(10)])
 D.extend([chr(ord('A')+i) for i in range(26)])
 D.extend([' ', '$', '%', '*', '+', '-', '.', '/', ':'])
+D = np.array(D)
+IDX_D = {D[i]: i for i in range(len(D))}
 
 QRCODE_MAX_DICT={
         qrcode.constants.ERROR_CORRECT_L: 1852,
@@ -40,14 +42,11 @@ def _default_image_name_generator(nr_imgs):
         yield fmt % i
 
 def data2code(s):
-    byte_array=bz2.compress(s.encode(ENCODE_METHOD))
+    byte_array=bz2.compress(s)
     bits = ''.join(map(lambda bt: bin(bt)[2:].zfill(8), byte_array))
-    bignum = int(bits, 2)
-    bit45_array = []
-    while bignum > 0:
-        bit45_array.append(bignum%45)
-        bignum = bignum // 45
-    encoded = ''.join([D[bit45] for bit45 in bit45_array])
+    bits = bits.zfill(len(bits) + (-len(bits)%5)) # padding zero so len(bits) % 5 == 0
+    np_num32 = [int(bits[i:i+5], 2) for i in range(0, len(bits), 5)]
+    encoded = ''.join(D[np_num32])
     return encoded
 
 def code2qrcode(encoded, image_name_generator=None):
@@ -72,13 +71,9 @@ def qrcode2code(img_name):
 
 def code2data(encoded):
     encoded = encoded.replace('\n','')
-    bignum = 0
-    for ch in encoded[::-1]:
-        bignum *= 45
-        bignum += D.index(ch)
-
-    bits = bin(bignum)[2:]
-    bits = bits.zfill(len(bits)+8-len(bits)%8) # padding until be a multiple of 8
+    num32_arr = [IDX_D[c] for c in encoded]
+    bits = ''.join([bin(x)[2:].zfill(5) for x in num32_arr])
+    bits = bits[len(bits)%8:]  # remove padding
     bit8_array = [bits[i:i+8] for i in range(0, len(bits), 8)]
-    return bz2.decompress(bytes([int(byte, 2) for byte in bit8_array])).decode(ENCODE_METHOD)
+    return bz2.decompress(bytes([int(byte, 2) for byte in bit8_array]))
 

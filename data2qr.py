@@ -19,26 +19,22 @@ parser.add_argument('filenames', nargs='*', type=str,
 
 args = parser.parse_args()
 
-def write_file_script(filename, content):
-    eof_str = 'EOF'
-    while eof_str in content:
-        eof_str = f'{eof_str}{random.choice(string.ascii_letters + string.digits)}'
+def write_file_script(filename, byte_arr):
+    content = data2code(byte_arr)
     script = f"""
 mkdir -p $(dirname {filename})
-cat <<{eof_str} | head -n-1 > {filename}
-{content}
-{eof_str}
+python -c 'from data2qr import *; f=open("{filename}", "wb"); f.write(code2data("{content}")); f.close()'
 """
     return script
 
 if args.mode == 'encode':
     big_str = ''
     for filename in args.filenames:
-        with open(filename, 'r') as f:
+        with open(filename, 'rb') as f:
             content = f.read()
         script = write_file_script(filename, content)
         big_str += script
-    encoded_str = data2code(big_str)
+    encoded_str = data2code(big_str.encode('ascii'))
     code2qrcode(encoded_str)
 elif args.mode == 'decode':
     decoded_filename = args.out_filename
@@ -48,7 +44,7 @@ elif args.mode == 'decode':
         contents = []
         for filename in args.filenames:
             contents.append(qrcode2code(filename))
-        decoded_content = code2data(''.join(contents))
+        decoded_content = code2data(''.join(contents)).decode('ascii')
         with open(decoded_filename, 'a') as f:
             f.write(decoded_content)
     except:
@@ -58,7 +54,7 @@ elif args.mode == 'decode-raw':
         try:
             with open(filename, 'r') as f:
                 content = f.read()
-            decoded_content = code2data(content)
+            decoded_content = code2data(content).decode('ascii')
 
             decoded_filename = args.out_filename
             if os.path.exists(decoded_filename):
