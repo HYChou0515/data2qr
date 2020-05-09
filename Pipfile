@@ -12,6 +12,7 @@ Pillow = "*"
 pyzbar = "*"
 qrcode = "*"
 six = "*"
+joblib = "*"
 
 [requires]
 python_version = "3.8"

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import os, traceback
 import argparse
-import qrcode
 from data2qr import *
 
 parser = argparse.ArgumentParser()

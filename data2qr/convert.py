@@ -4,6 +4,7 @@ import bz2
 import qrcode
 from PIL import Image
 from pyzbar import pyzbar
+from joblib import Parallel, delayed
 import math
 
 __all__ = ['data2code', 'code2qrcode', 'qrcode2code', 'code2data']
@@ -21,6 +22,9 @@ Decoding work flow: assume imcoming is one long string in char set D
     --padding--> bits with length be a multiple of 8 --8-bits-a-chunk--> byte array
     --bz2-decompress--> decoded byte array --decode-ascii--> ascii string
 """
+
+def info(s):
+    print(s)
 
 D = []
 D.extend([chr(ord('0')+i) for i in range(10)])
@@ -49,19 +53,24 @@ def data2code(s):
     encoded = ''.join(D[np_num32])
     return encoded
 
-def code2qrcode(encoded, image_name_generator=None):
-    ERROR_CORRECT = qrcode.constants.ERROR_CORRECT_Q
+def code2qrcode(encoded, image_name_generator=None, n_jobs=1):
+    ERROR_CORRECT = qrcode.constants.ERROR_CORRECT_L
     QRCODE_MAX = QRCODE_MAX_DICT[ERROR_CORRECT]
     chunks = [encoded[i:i+QRCODE_MAX] for i in range(0, len(encoded), QRCODE_MAX)]
     image_names =image_name_generator if image_name_generator is not None else _default_image_name_generator(len(chunks))
     rt_names = []
-    for chunk, image_name in zip(chunks, image_names):
+    def to_qrcode_1(_chunk, _image_name, _i):
         qr = qrcode.QRCode(error_correction=ERROR_CORRECT)
-        qr.add_data(chunk)
-        if os.path.exists(image_name):
-            raise os.error(f'File "{image_name}" exists')
-        qr.make_image().save(image_name, 'png')
-        rt_names.append(image_name)
+        qr.add_data(_chunk)
+        if os.path.exists(_image_name):
+            raise os.error(f'File "{_image_name}" exists')
+        qr.make_image().save(_image_name, 'png')
+        rt_names.append(_image_name)
+        info(f'{_i}/{len(chunks)}')
+    Parallel(n_jobs=n_jobs, require='sharedmem')(
+        delayed(to_qrcode_1)(chunk, image_name, i)
+        for i, (chunk, image_name) in enumerate(zip(chunks, image_names))
+    )
     return rt_names
 
 def qrcode2code(img_name):
