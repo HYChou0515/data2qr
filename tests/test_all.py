@@ -9,13 +9,15 @@ TEMP_DIR = '.tmp/'
 try:
     SKIP_INTERNAL_TEST=os.environ['SKIP_INTERNAL_TEST']
 except KeyError:
-    SKIP_INTERNAL_TEST=0
+    SKIP_INTERNAL_TEST='0'
 
 class SingleFileTemplate(unittest.TestCase):
 
     def _content(self, code=False):
-        with open(self._target(code), 'rb') as f:
+        with open(self._target(code), 'r' if code else 'rb') as f:
             content = f.read()
+        if code:
+            content = content.strip()
         return content
 
     @classmethod
@@ -69,13 +71,13 @@ class SingleFileTemplate(unittest.TestCase):
         content = self._content()
         self.assertEqual(data2qr.code2data(data2qr.data2code(content)), content + 'HELLO')
 
-    @unittest.skipUnless(SKIP_INTERNAL_TEST==0, 'skipping internal test')
+    @unittest.skipUnless(SKIP_INTERNAL_TEST=='0', 'skipping internal test')
     def test_data_to_code(self):
         content = self._content()
         code = self._content(code=True)
         self.assertEqual(data2qr.data2code(content), code)
 
-    @unittest.skipUnless(SKIP_INTERNAL_TEST==0, 'skipping internal test')
+    @unittest.skipUnless(SKIP_INTERNAL_TEST=='0', 'skipping internal test')
     def test_code_to_data(self):
         content = self._content()
         code = self._content(code=True)

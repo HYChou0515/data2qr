@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SKIP_INTERNAL_TEST=1
+SKIP_INTERNAL_TEST=0
 if [ "$#" -ge "1" ]; then
 	SKIP_INTERNAL_TEST="$1"
 fi
