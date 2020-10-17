@@ -11,13 +11,7 @@ try:
 except KeyError:
     SKIP_INTERNAL_TEST=0
 
-class Test_EnTxt(unittest.TestCase):
-
-    def _target(self, code=False):
-        if not code:
-            return f'{TEST_ROOT}/{RESOURCE}/en_txt'
-        else:
-            return f'{TEST_ROOT}/{RESOURCE}/en_txt.code'
+class SingleFileTemplate(unittest.TestCase):
 
     def _content(self, code=False):
         with open(self._target(code), 'rb') as f:
@@ -26,6 +20,8 @@ class Test_EnTxt(unittest.TestCase):
 
     @classmethod
     def setup_class(cls):
+        if cls is SingleFileTemplate:
+            raise unittest.SkipTest('skip template test case')
         assert not os.path.exists(TEMP_DIR)
 
     def setup_method(self, method):
@@ -85,11 +81,51 @@ class Test_EnTxt(unittest.TestCase):
         code = self._content(code=True)
         self.assertEqual(data2qr.code2data(code), content)
 
-class Test_PyCode(Test_EnTxt):
+class Test_EnTxt(SingleFileTemplate):
 
     def _target(self, code=False):
         if not code:
-            return f'{TEST_ROOT}/{RESOURCE}/py_code'
+            return f'{TEST_ROOT}/{RESOURCE}/en_us.txt'
+        else:
+            return f'{TEST_ROOT}/{RESOURCE}/en_us.code'
+
+class Test_PyCode(SingleFileTemplate):
+
+    def _target(self, code=False):
+        if not code:
+            return f'{TEST_ROOT}/{RESOURCE}/py_code.txt'
         else:
             return f'{TEST_ROOT}/{RESOURCE}/py_code.code'
+
+class Test_ZhChTxt(SingleFileTemplate):
+
+    def _target(self, code=False):
+        if not code:
+            return f'{TEST_ROOT}/{RESOURCE}/zh_ch.txt'
+        else:
+            return f'{TEST_ROOT}/{RESOURCE}/zh_ch.code'
+
+class Test_ZhTwTxt(SingleFileTemplate):
+
+    def _target(self, code=False):
+        if not code:
+            return f'{TEST_ROOT}/{RESOURCE}/zh_ch.txt'
+        else:
+            return f'{TEST_ROOT}/{RESOURCE}/zh_ch.code'
+
+class Test_JaJpTxt(SingleFileTemplate):
+
+    def _target(self, code=False):
+        if not code:
+            return f'{TEST_ROOT}/{RESOURCE}/ja_jp.txt'
+        else:
+            return f'{TEST_ROOT}/{RESOURCE}/ja_jp.code'
+
+class Test_TestPng(SingleFileTemplate):
+
+    def _target(self, code=False):
+        if not code:
+            return f'{TEST_ROOT}/{RESOURCE}/test.png'
+        else:
+            return f'{TEST_ROOT}/{RESOURCE}/test_png.code'
 
