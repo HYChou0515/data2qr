@@ -60,20 +60,21 @@ def code2qrcode(encoded, image_name_generator=None, prefix=None, n_jobs=1):
     QRCODE_MAX = QRCODE_MAX_DICT[ERROR_CORRECT]
     chunks = [encoded[i:i+QRCODE_MAX] for i in range(0, len(encoded), QRCODE_MAX)]
     image_names =image_name_generator if image_name_generator is not None else _default_image_name_generator(len(chunks), prefix=prefix)
-    rt_names = []
+
     def to_qrcode_1(_chunk, _image_name, _i):
         qr = qrcode.QRCode(error_correction=ERROR_CORRECT)
         qr.add_data(_chunk)
         if os.path.exists(_image_name):
             raise os.error(f'File "{_image_name}" exists')
         qr.make_image().save(_image_name, 'png')
-        rt_names.append(_image_name)
         info(f'{_i}/{len(chunks)}')
-    Parallel(n_jobs=n_jobs, require='sharedmem')(
+
+    image_names = [image_name for image_name in image_names][:len(chunks)]
+    Parallel(n_jobs=n_jobs, prefer='processes')(
         delayed(to_qrcode_1)(chunk, image_name, i)
         for i, (chunk, image_name) in enumerate(zip(chunks, image_names))
     )
-    return rt_names
+    return image_names
 
 def qrcode2code(img_name):
     img = Image.open(img_name)

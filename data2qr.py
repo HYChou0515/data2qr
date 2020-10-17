@@ -34,7 +34,7 @@ if args.mode in ('encode', 'd2q'):
         script = write_file_script(filename, content)
         big_str += script
     encoded_str = data2code(big_str.encode('ascii'))
-    code2qrcode(encoded_str)
+    code2qrcode(encoded_str, n_jobs=-1)
 elif args.mode in ('decode', 'q2d'):
     decoded_filename = args.out_filename
     try:
