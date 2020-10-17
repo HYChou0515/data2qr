@@ -40,8 +40,10 @@ QRCODE_MAX_DICT={
         qrcode.constants.ERROR_CORRECT_H: 490,
 }
 
-def _default_image_name_generator(nr_imgs):
+def _default_image_name_generator(nr_imgs, prefix=None):
     fmt = '%%0%dd.png' % (int(math.floor(math.log10(nr_imgs)))+1)
+    if prefix is not None:
+        fmt = prefix + fmt
     for i in range(nr_imgs):
         yield fmt % i
 
@@ -53,11 +55,11 @@ def data2code(s):
     encoded = ''.join(D[np_num32])
     return encoded
 
-def code2qrcode(encoded, image_name_generator=None, n_jobs=1):
-    ERROR_CORRECT = qrcode.constants.ERROR_CORRECT_L
+def code2qrcode(encoded, image_name_generator=None, prefix=None, n_jobs=1):
+    ERROR_CORRECT = qrcode.constants.ERROR_CORRECT_M
     QRCODE_MAX = QRCODE_MAX_DICT[ERROR_CORRECT]
     chunks = [encoded[i:i+QRCODE_MAX] for i in range(0, len(encoded), QRCODE_MAX)]
-    image_names =image_name_generator if image_name_generator is not None else _default_image_name_generator(len(chunks))
+    image_names =image_name_generator if image_name_generator is not None else _default_image_name_generator(len(chunks), prefix=prefix)
     rt_names = []
     def to_qrcode_1(_chunk, _image_name, _i):
         qr = qrcode.QRCode(error_correction=ERROR_CORRECT)

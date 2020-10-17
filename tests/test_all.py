@@ -4,6 +4,7 @@ import os
 
 TEST_ROOT='tests'
 RESOURCE='resource'
+TEMP_DIR = '.tmp/'
 
 try:
     SKIP_INTERNAL_TEST=os.environ['SKIP_INTERNAL_TEST']
@@ -19,9 +20,20 @@ class Test_EnTxt(unittest.TestCase):
             return f'{TEST_ROOT}/{RESOURCE}/en_txt.code'
 
     def _content(self, code=False):
-        with open(self._target(code), 'r') as f:
+        with open(self._target(code), 'rb') as f:
             content = f.read()
         return content
+
+    @classmethod
+    def setup_class(cls):
+        assert not os.path.exists(TEMP_DIR)
+
+    def setup_method(self, method):
+        os.makedirs(TEMP_DIR, exist_ok=False)
+
+    def teardown_method(self, method):
+        import shutil
+        shutil.rmtree(TEMP_DIR)
 
     def test_file_exists(self):
         self.assertTrue(os.path.isfile(self._target()))
@@ -31,8 +43,8 @@ class Test_EnTxt(unittest.TestCase):
         self.assertEqual(data2qr.code2data(data2qr.data2code(content)), content)
 
     def test_should_not_overwrite_existing_figure(self):
-        f_name = '0.png'
-        self.assertFalse(os.path.exists(f_name))
+        f_name = os.path.join(TEMP_DIR, '0.png')
+        assert not os.path.exists(f_name), f'test prepared fail: f_name={f_name} exists'
         with open(f_name, 'w') as f:
             f.write('test')
         content = self._content()
@@ -49,7 +61,7 @@ class Test_EnTxt(unittest.TestCase):
     def test_data_to_qrcode_to_data(self):
         content = self._content()
         code = data2qr.data2code(content)
-        img_names = data2qr.code2qrcode(code)
+        img_names = data2qr.code2qrcode(code, prefix=TEMP_DIR)
         codes = []
         for img_name in img_names:
             codes.append(data2qr.qrcode2code(img_name))
