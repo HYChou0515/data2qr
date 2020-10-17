@@ -116,5 +116,5 @@ def analysis_video(vname, scan_qr_rate=10, quite_mode=False):
 if __name__ == '__main__':
     import sys
     #capture_video()
-    decoded_str = analysis_video(sys.argv[1])
+    decoded_str = analysis_video(sys.argv[1], quite_mode=True)
     print(decoded_str)

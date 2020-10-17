@@ -5,7 +5,7 @@ from data2qr import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-m', dest='mode',
-    type=str, choices=['encode', 'decode', 'decode-raw'],
+    type=str, choices=['encode', 'd2q', 'decode', 'q2d', 'decode-raw'],
     action='store', default='encode',
     help='covert mode')
 parser.add_argument('-o', dest='out_filename',
@@ -26,7 +26,7 @@ python -c 'from data2qr import *; f=open("{filename}", "wb"); f.write(code2data(
 """
     return script
 
-if args.mode == 'encode':
+if args.mode in ('encode', 'd2q'):
     big_str = ''
     for filename in args.filenames:
         with open(filename, 'rb') as f:
@@ -35,7 +35,7 @@ if args.mode == 'encode':
         big_str += script
     encoded_str = data2code(big_str.encode('ascii'))
     code2qrcode(encoded_str)
-elif args.mode == 'decode':
+elif args.mode in ('decode', 'q2d'):
     decoded_filename = args.out_filename
     try:
         if os.path.exists(decoded_filename):
@@ -49,16 +49,16 @@ elif args.mode == 'decode':
     except:
         traceback.print_exc()
 elif args.mode == 'decode-raw':
+    decoded_filename = args.out_filename
+    if os.path.exists(decoded_filename):
+        raise Exception(f'file {decoded_filename} already exists')
     for filename in args.filenames:
         try:
             with open(filename, 'r') as f:
                 content = f.read()
             decoded_content = code2data(content).decode('ascii')
 
-            decoded_filename = args.out_filename
-            if os.path.exists(decoded_filename):
-                raise Exception(f'file {decoded_filename} already exists')
-            with open(decoded_filename, 'w') as f:
+            with open(decoded_filename, 'a') as f:
                 f.write(decoded_content)
         except:
             traceback.print_exc()
